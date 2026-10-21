@@ -341,6 +341,7 @@ class NativeTests(unittest.TestCase):
             with self.assertRaises(ConfigError):
                 sub.export_tree({".claude/hooks.json": content}, self.root, base={})
 
+    @unittest.skipIf(os.name == "nt", "POSIX shell executor; native Windows is blocked")
     def test_command_native_files_and_run_with_quoted_paths(self):
         sub = CommandSubstrate(
             'cat {prompt_file}; printf "diagnostic" >&2; '
@@ -543,8 +544,8 @@ print('{"type":"result","result":"ok","total_cost_usd":0.01}')
                             "exec",
                             "--json",
                             "--skip-git-repo-check",
-                            "--dangerously-bypass-approvals-and-sandbox",
-                            "--dangerously-bypass-hook-trust",
+                            "--sandbox",
+                            "read-only",
                             "--ephemeral",
                             "-C",
                             str(self.root),

@@ -29,6 +29,8 @@ from fnmatch import fnmatchcase
 from functools import lru_cache
 from pathlib import Path
 
+from .._paths import checked_path, checked_root, iter_files, normalize_rel, validate_relative_paths
+
 Tree = dict[str, str]
 
 
@@ -88,16 +90,6 @@ def _rx(surface: SurfaceSpec) -> dict[str, re.Pattern]:
     return _res(surface.name, surface.skill_dir, surface.plugin_dir, surface.script_dir)
 
 
-def normalize_rel(rel: str) -> str:
-    """Normalise a relative path, rejecting escapes before it is joined to a directory."""
-    r = str(rel).strip().replace("\\", "/")
-    if r.startswith("/") or ".." in r.split("/"):
-        raise ValueError(f"path escapes the harness: {rel!r}")
-    while r.startswith("./"):
-        r = r[2:]
-    return r.strip("/")
-
-
 def is_allowed(surface: SurfaceSpec, rel: str) -> bool:
     """Whether this path is on the editable surface. A predicate: it never raises."""
     try:
@@ -140,29 +132,31 @@ def read_tree(surface: SurfaceSpec, d: Path | str, *, rejected: list[str] | None
 
     Pass `rejected` to collect paths that exist on disk but are off the surface.
     """
-    d = Path(d)
+    d = checked_root(Path(d))
     out: Tree = {}
     if not d.is_dir():
         return out
     stubs = _stub_paths(surface)
-    for p in sorted(d.rglob("*")):
+    for p in iter_files(d):
         if not p.is_file() or "__pycache__" in p.parts:
             continue
-        rel = str(p.relative_to(d))
+        rel = p.relative_to(d).as_posix()
         if rel in stubs:
             continue
         if not is_allowed(surface, rel):
             if rejected is not None:
                 rejected.append(rel)
             continue
-        out[rel] = p.read_text(encoding="utf-8", errors="replace")
+        out[rel] = checked_path(d, rel).read_text(encoding="utf-8", errors="replace")
+    validate_relative_paths(out)
     return out
 
 
 def is_tree(surface: SurfaceSpec, d: Path | str) -> bool:
-    d = Path(d)
+    d = checked_root(Path(d))
     return d.is_dir() and (
-        bool(surface.editable_globs) or any((d / a).is_file() for a in surface.always_on)
+        bool(surface.editable_globs)
+        or any(checked_path(d, a).is_file() for a in surface.always_on)
     )
 
 
@@ -171,27 +165,42 @@ def write_tree(surface: SurfaceSpec, tree: Tree, dest: Path | str, *, stubs: boo
 
     Files outside the editable surface are preserved; editable files already there are not.
     """
-    dest = Path(dest)
-    dest.mkdir(parents=True, exist_ok=True)
+    dest = checked_root(Path(dest))
+    keys = validate_relative_paths(tree)
+    tree = dict(zip(keys, tree.values()))
+    validate_relative_paths(set(tree) | set(surface.always_on) | set(_stub_paths(surface)))
+    targets = {
+        rel: checked_path(dest, rel)
+        for rel in set(tree) | set(surface.always_on) | set(_stub_paths(surface))
+    }
+    for rel, path in targets.items():
+        if path.is_dir():
+            raise ValueError(f"managed file path is an existing directory: {rel}")
     stub_set = _stub_paths(surface)
-    for p in sorted(dest.rglob("*"), reverse=True):
-        if not p.is_file():
-            continue
-        rel = str(p.relative_to(dest))
+    existing = iter_files(dest)
+    removable = []
+    for p in existing:
+        rel = p.relative_to(dest).as_posix()
         if is_allowed(surface, rel) or rel in stub_set:
-            p.unlink()
+            removable.append(checked_path(dest, rel))
+    validate_relative_paths(
+        set(targets) | {p.relative_to(dest).as_posix() for p in existing}
+    )
+    dest.mkdir(parents=True, exist_ok=True)
+    for p in removable:
+        p.unlink()
     for a in surface.always_on:
-        p = dest / a
+        p = targets[a]
         p.parent.mkdir(parents=True, exist_ok=True)
         if a not in tree and not p.exists():
             p.write_text("", encoding="utf-8")
     for rel, content in tree.items():
-        p = dest / normalize_rel(rel)
+        p = targets[rel]
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(content, encoding="utf-8")
     if stubs:
         for rel, body in surface.stubs:
-            p = dest / rel
+            p = targets[rel]
             p.parent.mkdir(parents=True, exist_ok=True)
             if not p.exists():
                 p.write_text(body, encoding="utf-8")

@@ -27,6 +27,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 from .. import settings
+from .._paths import normalize_rel
 from ..core import library as LIB
 from ..core import schedule
 from ..settings import ConfigError
@@ -96,8 +97,12 @@ class Context:
 
 
 def run_path(ctx: Context, name: str) -> Path:
-    if not name or name in (".", "..") or Path(name).name != name:
-        raise ConfigError("run name must be a single directory name")
+    try:
+        normalized = normalize_rel(name)
+    except ValueError as exc:
+        raise ConfigError(str(exc)) from exc
+    if not normalized or normalized != name or "/" in normalized:
+        raise ConfigError("run name must be a single portable directory name")
     return ctx.settings.path("paths.runs") / name
 
 
@@ -120,6 +125,8 @@ def resolve_run(ctx: Context, name: str | None) -> Path:
 
 
 def run_process(run_dir: Path) -> dict | None:
+    from .._process import is_running
+
     path = run_dir / "run.pid"
     try:
         record = json.loads(path.read_text(encoding="utf-8"))
@@ -137,13 +144,9 @@ def run_process(run_dir: Path) -> dict | None:
     except ValueError:
         path.unlink(missing_ok=True)
         return None
-    try:
-        os.kill(record["pid"], 0)
-    except ProcessLookupError:
+    if not is_running(record["pid"]):
         path.unlink(missing_ok=True)
         return None
-    except PermissionError:
-        pass
     return record
 
 

@@ -212,3 +212,9 @@ Apache 2.0; see [LICENSE](LICENSE). The method and the original implementation a
 paper's authors at Google; Harness² CLI is an independent fork, not a Google product, and is
 not maintained by Google. Third-party code in the benchmarks plugin keeps its upstream
 licenses.
+
+## Windows fork status
+
+Native Windows foundation work is documented in [docs/windows.md](docs/windows.md).
+This milestone covers offline compatibility contracts; full experiment lifecycle support
+remains in progress.

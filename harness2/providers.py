@@ -61,11 +61,13 @@ def codex_login_home(p: Provider) -> Path:
     return Path(p.home).expanduser() if p.home else state_dir() / "codex-home"
 
 
-def codex_logged_in(home: Path) -> bool:
+def codex_logged_in(home: Path, binary="") -> bool:
+    from ._argv import cli_argv
+
     try:
         return (
             subprocess.run(
-                ["codex", "login", "status"],
+                [*cli_argv(binary, "codex"), "login", "status"],
                 env={
                     **{
                         k: v
@@ -211,10 +213,10 @@ def litellm_params(p: Provider, model: str) -> dict:
     raise ConfigError(f"unknown provider type {p.type!r}; use one of {PROVIDER_TYPES}")
 
 
-def check(p: Provider) -> list[str]:
+def check(p: Provider, *, binary="") -> list[str]:
     if p.type == "chatgpt-login":
         home = codex_login_home(p)
-        if codex_logged_in(home):
+        if codex_logged_in(home, binary):
             return []
         if p.home:
             return [

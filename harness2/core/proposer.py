@@ -25,7 +25,6 @@ import hashlib
 import json
 import os
 import re
-import shlex
 import shutil
 import subprocess
 import tempfile
@@ -35,6 +34,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .. import providers
+from .._argv import cli_argv
 from ..substrate.codex import CodexSubstrate, parse_items_text
 from . import events
 from .spec import ChannelSpec
@@ -107,7 +107,7 @@ class Proposer:
         return self.spec.model.split("/", 1)[-1]
 
     def _bin(self) -> list[str]:
-        return shlex.split(self.spec.bin) if self.spec.bin else [self.spec.kind]
+        return cli_argv(self.spec.bin, self.spec.kind)
 
     def _emit(self, reply: Reply) -> None:
         events.emit(
@@ -256,6 +256,7 @@ class Proposer:
             cwd=cwd,
             env=env,
             text=True,
+            encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=wall,
@@ -291,7 +292,8 @@ class Proposer:
                 "exec",
                 "--json",
                 "--skip-git-repo-check",
-                "--dangerously-bypass-approvals-and-sandbox",
+                "--sandbox",
+                "read-only",
                 "--ephemeral",
                 *providers.codex_args(self.spec.provider, model, self.spec.effort),
                 "-C",
@@ -302,6 +304,7 @@ class Proposer:
             cwd=cwd,
             env=CodexSubstrate().env(self.env(), home, provider=self.spec.provider),
             text=True,
+            encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=wall,
@@ -359,6 +362,7 @@ class Proposer:
             cwd=cwd,
             env=env,
             text=True,
+            encoding="utf-8",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=wall,
@@ -577,17 +581,17 @@ def _call_fingerprint(
     if context_dir:
         root = Path(context_dir)
         location = (
-            os.path.relpath(root.resolve(), Path(anchor).resolve())
+            Path(os.path.relpath(root.resolve(), Path(anchor).resolve())).as_posix()
             if anchor
             else str(root.resolve())
         )
         h.update(location.encode("utf-8", errors="replace"))
         h.update(b"\0")
         if root.is_dir():
-            for p in sorted(root.rglob("*")):
+            for p in sorted(root.rglob("*"), key=lambda p: p.relative_to(root).as_posix()):
                 if not p.is_file() or "__pycache__" in p.parts:
                     continue
-                h.update(str(p.relative_to(root)).encode("utf-8", errors="replace"))
+                h.update(p.relative_to(root).as_posix().encode("utf-8", errors="replace"))
                 h.update(b"\0")
                 try:
                     with p.open("rb") as fh:

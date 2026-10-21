@@ -113,7 +113,7 @@ class CodexSubstrate:
     name = "cx"
     NATIVE_PATHS = NATIVE_PATHS
 
-    def __init__(self, launcher: Launcher | None = None, *, bin: str = ""):
+    def __init__(self, launcher: Launcher | None = None, *, bin: str | list[str] | tuple[str, ...] = ""):
         self._launcher = launcher
         self.bin = bin
 
@@ -153,11 +153,11 @@ class CodexSubstrate:
         model: str,
         *,
         reasoning_effort: str = "high",
-        bin: str = "",
+        bin: str | list[str] | tuple[str, ...] = "",
     ) -> list[str]:
         """The reference `codex exec` argv; the real launchers build their own.
 
-        Hook trust enables the editable hooks; JSON preserves ephemeral sessions.
+        The first-stage runner uses a read-only sandbox; hook trust is never bypassed.
         Callers use stdin=DEVNULL and `exec_env`.
         """
         return [
@@ -169,8 +169,8 @@ class CodexSubstrate:
             "-c",
             f'model_reasoning_effort="{reasoning_effort}"',
             "--skip-git-repo-check",
-            "--dangerously-bypass-approvals-and-sandbox",
-            "--dangerously-bypass-hook-trust",
+            "--sandbox",
+            "read-only",
             "--ephemeral",
             "--json",
             "-C",
@@ -180,7 +180,7 @@ class CodexSubstrate:
         ]
 
     def exec_env(
-        self, base_env: Mapping[str, str], *, codex_home: Path, bin: str = ""
+        self, base_env: Mapping[str, str], *, codex_home: Path, bin: str | list[str] | tuple[str, ...] = ""
     ) -> dict[str, str]:
         """The reference `codex exec` environment; the real launchers build their own.
 
@@ -224,8 +224,8 @@ class CodexSubstrate:
             "exec",
             "--json",
             "--skip-git-repo-check",
-            "--dangerously-bypass-approvals-and-sandbox",
-            "--dangerously-bypass-hook-trust",
+            "--sandbox",
+            "read-only",
             "--ephemeral",
             *providers.codex_args(provider, model, effort),
             "-C",

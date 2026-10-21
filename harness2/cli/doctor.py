@@ -67,7 +67,8 @@ def run(args, ctx) -> int:
         if channel == "human":
             continue
         if channel != "command":
-            binaries.add((role["bin"], channel))
+            binary = tuple(role["bin"]) if isinstance(role["bin"], list) else role["bin"]
+            binaries.add((binary, channel))
         model = role["model"]
         if model:
 
@@ -107,19 +108,33 @@ def run(args, ctx) -> int:
                     "detail": f"set {role_name}.model (provider/model)",
                 }
             )
-    for binary, channel in sorted(binaries):
+    for binary, channel in sorted(binaries, key=lambda item: (item[1], repr(item[0]))):
 
         def binary_check(binary=binary, channel=channel):
             argv = cli_argv(binary, channel)
             result = subprocess.run(
-                [*argv, "--version"], check=True, capture_output=True, text=True, timeout=10
+                [*argv, "--version"],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                timeout=10,
             )
             return (result.stdout or result.stderr).strip()
 
         check(f"{binary or channel} CLI", binary_check)
     for name in sorted(referenced):
         provider = config.provider(name)
-        problems = providers.check(provider)
+        binary = next(
+            (
+                role["bin"]
+                for role in roles
+                if role.get("channel") == "codex"
+                and role.get("model", "").startswith(name + "/")
+            ),
+            "",
+        )
+        problems = providers.check(provider, binary=binary)
         detail = f"key in {provider.api_key_env}" if provider.api_key_env else "ok"
         rows.append(
             {

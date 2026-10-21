@@ -27,6 +27,8 @@ import os
 import time
 from pathlib import Path
 
+from .._paths import checked_root, iter_files, normalize_rel
+
 MARK = ".adapt_complete"
 
 
@@ -36,16 +38,19 @@ VERSION = 1
 def relative_path(path: Path | str, root: Path) -> str:
     """Persist paths inside the run root without tying them to its current location."""
     resolved = Path(path).resolve()
-    return str(
-        resolved.relative_to(root.resolve())
+    return (
+        resolved.relative_to(root.resolve()).as_posix()
         if resolved.is_relative_to(root.resolve())
-        else resolved
+        else str(resolved)
     )
 
 
 def resolve_path(path: Path | str, root: Path) -> Path:
     """Read both relocatable records and legacy absolute paths."""
-    return root / Path(path)
+    path = Path(path)
+    if path.is_absolute():
+        return path
+    return root / normalize_rel(str(path))
 
 
 def _ignored(p: Path) -> bool:
@@ -59,14 +64,14 @@ def fingerprint(harness_dir: Path | None) -> str:
     """
     if harness_dir is None:
         return "base"
-    root = Path(harness_dir)
+    root = checked_root(Path(harness_dir))
     if not root.is_dir():
         return "absent"
     h = hashlib.sha1()
-    for p in sorted(root.rglob("*")):
+    for p in iter_files(root):
         if not p.is_file() or p.name == MARK or _ignored(p):
             continue
-        h.update(str(p.relative_to(root)).encode())
+        h.update(p.relative_to(root).as_posix().encode("utf-8"))
         h.update(b"\0")
         try:
             h.update(p.read_bytes())
@@ -90,7 +95,7 @@ def mark_complete(
         **(extra or {}),
     }
     tmp = d / f"{MARK}.{os.getpid()}.tmp"
-    tmp.write_text(json.dumps(payload, indent=2, sort_keys=True))
+    tmp.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     final = d / MARK
     os.replace(tmp, final)
     return final
@@ -98,7 +103,7 @@ def mark_complete(
 
 def read_mark(where: Path) -> dict | None:
     try:
-        return json.loads((Path(where) / MARK).read_text())
+        return json.loads((Path(where) / MARK).read_text(encoding="utf-8"))
     except Exception:
         return None
 

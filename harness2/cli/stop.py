@@ -19,6 +19,8 @@ from __future__ import annotations
 import os
 import signal
 
+from .._process import IS_WINDOWS
+from ..settings import ConfigError
 from . import _common as C
 
 
@@ -32,6 +34,11 @@ def run(args, ctx) -> int:
     root = C.resolve_run(ctx, args.name)
     process = C.run_process(root)
     if process is not None:
+        if IS_WINDOWS:
+            raise ConfigError(
+                "stop is not supported on native Windows yet; no signal was sent. "
+                "Use the foreground run's own console to interrupt it."
+            )
         pid = process["pid"]
         try:
             # A detached run leads its own process group, so the agent CLIs it started stop

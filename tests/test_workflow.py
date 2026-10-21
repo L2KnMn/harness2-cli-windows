@@ -140,6 +140,7 @@ class WorkflowTests(unittest.TestCase):
         proposer = Proposer(self.proposer.spec)
         with (
             patch("harness2.core.proposer.subprocess.run", side_effect=run_opencode),
+            patch("harness2.core.proposer.cli_argv", return_value=["opencode"]),
         ):
             for index in range(2):
                 proposer.call("Read this task only", None, f"isolation{index}")

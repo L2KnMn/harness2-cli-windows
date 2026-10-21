@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import os
 import shlex
 import shutil
 import subprocess
@@ -26,6 +27,7 @@ from typing import Mapping
 from ..core import runmark as RM
 from ..core import tree as HT
 from ..core.tree import SurfaceSpec
+from ..settings import ConfigError
 from ._native import export_files, native_tree, surface_files
 from .base import Install
 from .codex import _clip
@@ -95,6 +97,11 @@ class CommandSubstrate:
         timeout: int,
         env: Mapping[str, str],
     ) -> int:
+        if os.name == "nt":
+            raise ConfigError(
+                "the shell command executor is unsupported on native Windows; "
+                "use an explicit Codex executable argv array"
+            )
         command = self.template.format(
             workspace=shlex.quote(str(workspace)),
             prompt_file=shlex.quote(str(prompt_file)),

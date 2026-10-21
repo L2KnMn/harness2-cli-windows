@@ -6,6 +6,16 @@ All notable changes to Harness² CLI are documented here. The format follows
 
 ## [Unreleased]
 
+### Windows foundation
+
+- Add signal-free Windows process observation and cross-process summary locks.
+- Accept portable executable argument arrays; reject native Windows shell shims.
+- Canonicalize managed paths and fingerprints, rejecting Windows aliases and redirections.
+- Use a read-only core Codex sandbox without approval or hook-trust bypasses.
+- Add Windows/Python 3.12 and 3.13 offline foundation CI and Unicode path coverage.
+- Explicitly block native Windows live runs, detach, live stop and the POSIX shell executor pending
+  their supervisor/quoting milestones. See `docs/windows.md` for remaining limitations.
+
 The first release of Harness² CLI, a general-purpose version of
 [google-research/harness2](https://github.com/google-research/harness2) (forked at
 `1cfe254`). The method and its prompts are unchanged; everything around them is new.

@@ -42,7 +42,7 @@ class ChannelSpec:
     effort: str = "high"
     steps: int = 120
     timeout: int = 3600
-    bin: str = ""
+    bin: str | list[str] | tuple[str, ...] = ""
     provider: Provider | None = None
 
     def __post_init__(self) -> None:
