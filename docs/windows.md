@@ -69,6 +69,16 @@ No global Codex configuration, credentials, or approval policy is changed by thi
 
 ## Offline validation
 
+The shared runner and its [local/hosted comparison](validation/windows-offline-comparison.md)
+record identical selected suites on Windows 11 and a standard Windows Server 2022 VM:
+
+```powershell
+python -X utf8 -B scripts/run_windows_offline.py --output .test-temp/windows-offline
+```
+
+It needs no project installation and reports both foundation tests and the separate
+offline runtime regressions. A failure in either group produces a nonzero exit.
+
 Run the Windows foundation suites after making the package available in a local test
 environment:
 

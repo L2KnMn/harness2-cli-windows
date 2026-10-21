@@ -1,6 +1,8 @@
 # Windows foundation validation: 2026-10-21
 
 This records the first offline Windows milestone, not a complete Windows release.
+The later [local/hosted comparison](windows-offline-comparison.md) records the completed
+Windows VM and PC run; the initial checks below remain a historical record.
 Baseline: `0c811344a4edfe34960b2fc8f286369d7e81fb27`.
 Local implementation commit: `ff21ee953bfea2aa899bfae51c835c617aeb8402`.
 The documentation commit follows that local implementation.
