@@ -38,7 +38,11 @@ from harness2.demo import DemoAdapter, DemoProposer
 
 
 class AgentOpsTests(unittest.TestCase):
+    # These unit tests inject a fake suite; native live-run blocking has its own test.
     def setUp(self):
+        live_guard = patch("harness2.cli.run.NATIVE_WINDOWS", False)
+        live_guard.start()
+        self.addCleanup(live_guard.stop)
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.project = Path(temporary.name).resolve()
@@ -109,6 +113,7 @@ class AgentOpsTests(unittest.TestCase):
         self.assertEqual(out.getvalue(), "")
         self.assertIn("usage: harness2", err.getvalue())
 
+    @unittest.skipIf(os.name == "nt", "POSIX process control; Windows guards tested separately")
     def test_detach_preserves_in_process_argv_and_appends_logs(self):
         child = Mock(pid=12345)
         child.wait.side_effect = subprocess.TimeoutExpired("harness2", 2)
@@ -152,6 +157,7 @@ class AgentOpsTests(unittest.TestCase):
         self.suite.make_adapter.assert_not_called()
         self.assertFalse((root / "run.pid").exists())
 
+    @unittest.skipIf(os.name == "nt", "POSIX process control; Windows guards tested separately")
     def test_detach_explicit_name_and_exact_text(self):
         child = Mock(pid=12345)
         child.wait.return_value = 0
@@ -168,6 +174,7 @@ class AgentOpsTests(unittest.TestCase):
         )
         self.assertEqual(popen.call_args.args[0][-2:], ["run", "--name=chosen"])
 
+    @unittest.skipIf(os.name == "nt", "POSIX process control; Windows guards tested separately")
     def test_detach_early_failure_reports_last_twenty_lines(self):
         child = Mock(pid=12345)
         child.wait.return_value = 7
@@ -214,9 +221,9 @@ class AgentOpsTests(unittest.TestCase):
         self.assertIsNone(C.run_process(self.root))
         record = self.pid_record()
         self.assertEqual(C.run_process(self.root), record)
-        with patch.object(C.os, "kill", side_effect=PermissionError):
+        with patch("harness2._process.is_running", return_value=True):
             self.assertEqual(C.run_process(self.root), record)
-        with patch.object(C.os, "kill", side_effect=ProcessLookupError):
+        with patch("harness2._process.is_running", return_value=False):
             self.assertIsNone(C.run_process(self.root))
         self.assertFalse((self.root / "run.pid").exists())
         for invalid in (
@@ -227,11 +234,11 @@ class AgentOpsTests(unittest.TestCase):
             json.dumps(record | {"pid": True}),
             json.dumps(record | {"argv": [1]}),
         ):
-            with self.subTest(invalid=invalid), patch.object(C.os, "kill") as kill:
+            with self.subTest(invalid=invalid), patch("harness2._process.is_running") as probe:
                 (self.root / "run.pid").write_text(invalid)
                 self.assertIsNone(C.run_process(self.root))
                 self.assertFalse((self.root / "run.pid").exists())
-                kill.assert_not_called()
+                probe.assert_not_called()
 
     def test_pid_lifecycle_success_failure_and_interrupt(self):
         argv = ["-C", str(self.project), "--json", "run"]
@@ -280,6 +287,7 @@ class AgentOpsTests(unittest.TestCase):
             code, out, _ = self.invoke("--json", "run")
         self.assertEqual((code, json.loads(out)), (1, {"error": "failed", "exit_code": 1}))
 
+    @unittest.skipIf(os.name == "nt", "POSIX process control; Windows guards tested separately")
     def test_stop_signals_group_and_defaults_to_latest_run(self):
         self.pid_record()
         (self.root / "run.json").write_text("{}")
@@ -310,6 +318,7 @@ class AgentOpsTests(unittest.TestCase):
                     f"Asked run claude-k1 (pid {os.getpid()}) to stop. It ends the calls in flight, then exits; run the same command again to resume.\n",
                 )
 
+    @unittest.skipIf(os.name == "nt", "POSIX process control; Windows guards tested separately")
     def test_stop_not_running_and_process_exit_race(self):
         self.root.mkdir(parents=True)
         (self.root / "run.json").write_text("{}")

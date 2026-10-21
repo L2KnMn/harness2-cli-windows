@@ -31,6 +31,8 @@ from ..settings import ConfigError
 from . import _common as C
 from ._final import consolidate
 
+NATIVE_WINDOWS = os.name == "nt"
+
 FLAGS = {
     "suite": "suite.name",
     "executor": "executor.name",
@@ -169,6 +171,12 @@ def _print_stream(data) -> str:
 
 
 def _detach(args, ctx, name: str, root: Path) -> int:
+    from .._process import IS_WINDOWS
+
+    if IS_WINDOWS:
+        raise ConfigError(
+            "--detach is not supported on native Windows yet; run in the foreground instead."
+        )
     root.mkdir(parents=True, exist_ok=True)
     log = root / "run.log"
     argv = [arg for arg in args.argv if arg != "--detach"]
@@ -211,6 +219,12 @@ def run(args, ctx) -> int:
     try:
         if args.detach and args.dry_run:
             raise ConfigError("--detach starts a real run; drop --dry-run")
+        if NATIVE_WINDOWS and not args.dry_run:
+            raise ConfigError(
+                "native Windows live experiments are disabled in this foundation milestone; "
+                "use --dry-run. Process-tree stop/resume and call-budget reservations require "
+                "the next milestone."
+            )
         project, config = ctx.project, ctx.settings
         k, seed = config.get("run.k"), config.get("run.seed")
         modes = C.parse_modes(config.get("run.modes"))

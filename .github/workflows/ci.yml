@@ -30,6 +30,38 @@ jobs:
       - name: Plugin tests
         run: python -B -m unittest discover -s plugins/harness2-benchmarks/tests
 
+  windows-foundation:
+    name: Windows foundation (Python ${{ matrix.python }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+          activate-environment: true
+      - name: Install core only
+        run: uv pip install --no-deps -e .
+      - name: Windows process, locking and offline CLI tests
+        run: python -X utf8 -B -m unittest discover -s tests -p "test_windows_*.py"
+      - name: Portable argv and path contracts
+        run: python -X utf8 -B -m unittest discover -s tests -p "test_portable_*.py"
+      - name: Safe executable and argument contracts
+        run: python -X utf8 -B -m unittest discover -s tests -p test_safe_argv.py
+      - name: Offline provider and registry contracts
+        run: |
+          python -X utf8 -B -m unittest discover -s tests -p test_providers.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -X utf8 -B -m unittest discover -s tests -p test_registry.py
+      # Full core/plugin coverage remains mandatory on Linux/macOS above. Legacy
+      # Windows fixtures still rely on shebang/chmod and POSIX process controls;
+      # this job deliberately advertises foundation coverage, not full support.
+
   lint:
     name: Lint
     runs-on: ubuntu-latest

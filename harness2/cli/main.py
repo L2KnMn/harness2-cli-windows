@@ -18,10 +18,14 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import os
 import sys
 from importlib.metadata import version
+from pathlib import Path
 
 from ._common import Context
+
+NATIVE_WINDOWS = os.name == "nt"
 
 COMMANDS = (
     "init",
@@ -80,7 +84,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    alias = ALIASES.get(sys.argv[0].rsplit("/", 1)[-1])
+    alias = ALIASES.get(Path(sys.argv[0]).stem)
     if alias:
         # Aliases still accept global options before their subcommand's arguments.
         index = 0
@@ -97,8 +101,18 @@ def main(argv: list[str] | None = None) -> int:
         argv.insert(index, alias)
     args = build_parser().parse_args(argv)
     args.argv = argv
+    if args.json and callable(getattr(sys.stdout, "reconfigure", None)):
+        sys.stdout.reconfigure(encoding="utf-8", errors="strict", newline="\n")
     ctx = Context(args, getattr(args._module, "FLAGS", {}))
     try:
+        if NATIVE_WINDOWS and (
+            args.command in ("eval", "judge", "chat")
+            or (args.command == "doctor" and args.live)
+        ):
+            raise RuntimeError(
+                f"native Windows {args.command} model execution is unsupported in the "
+                "foundation milestone; use offline inspection and run --dry-run"
+            )
         ctx.debug(f"command: {args.command}")
         return args._module.run(args, ctx)
     except KeyboardInterrupt:

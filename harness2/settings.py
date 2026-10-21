@@ -172,6 +172,15 @@ def _validate(data: dict) -> None:
             value = run.get(key)
             if type(value) not in (int, float) or not value >= 0:
                 problems.append(f"run.{key} must be a non-negative number")
+    for role in ("executor", "improver", "selector", "reflector", "judge"):
+        values = data.get(role, {})
+        if not isinstance(values, dict) or "bin" not in values:
+            continue
+        binary = values["bin"]
+        if not isinstance(binary, str) and not (
+            isinstance(binary, list) and binary and all(isinstance(arg, str) for arg in binary)
+        ):
+            problems.append(f"{role}.bin must be a path string or a non-empty argv array")
     configured = data.get("providers", {})
     if isinstance(configured, dict):
         for name, value in configured.items():

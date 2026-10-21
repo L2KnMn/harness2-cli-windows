@@ -727,7 +727,7 @@ def check(ctx: SuiteContext) -> list[str]:
             if role != "executor":
                 _channel(settings, role)
             provider_name, _ = providers.split_model(values["model"])
-            problems.extend(providers.check(settings.provider(provider_name)))
+            problems.extend(providers.check(settings.provider(provider_name), binary=values["bin"]))
         except ConfigError as exc:
             problems.append(f"{role}: {exc}")
     tasks_dir = settings.path("paths.tasks")
