@@ -155,8 +155,7 @@ def read_tree(surface: SurfaceSpec, d: Path | str, *, rejected: list[str] | None
 def is_tree(surface: SurfaceSpec, d: Path | str) -> bool:
     d = checked_root(Path(d))
     return d.is_dir() and (
-        bool(surface.editable_globs)
-        or any(checked_path(d, a).is_file() for a in surface.always_on)
+        bool(surface.editable_globs) or any(checked_path(d, a).is_file() for a in surface.always_on)
     )
 
 
@@ -183,9 +182,7 @@ def write_tree(surface: SurfaceSpec, tree: Tree, dest: Path | str, *, stubs: boo
         rel = p.relative_to(dest).as_posix()
         if is_allowed(surface, rel) or rel in stub_set:
             removable.append(checked_path(dest, rel))
-    validate_relative_paths(
-        set(targets) | {p.relative_to(dest).as_posix() for p in existing}
-    )
+    validate_relative_paths(set(targets) | {p.relative_to(dest).as_posix() for p in existing})
     dest.mkdir(parents=True, exist_ok=True)
     for p in removable:
         p.unlink()

@@ -27,11 +27,13 @@ class ArgvContractTests(unittest.TestCase):
         from harness2.cli import main
 
         for command in (["eval"], ["judge"], ["chat"], ["doctor", "--live"]):
-            with self.subTest(command=command), patch.object(
-                main, "NATIVE_WINDOWS", True
-            ), patch.object(main, "version", return_value="offline"), patch(
-                f"harness2.cli.{command[0]}.run"
-            ) as dispatch, patch("sys.stdout", new_callable=io.StringIO) as output:
+            with (
+                self.subTest(command=command),
+                patch.object(main, "NATIVE_WINDOWS", True),
+                patch.object(main, "version", return_value="offline"),
+                patch(f"harness2.cli.{command[0]}.run") as dispatch,
+                patch("sys.stdout", new_callable=io.StringIO) as output,
+            ):
                 self.assertEqual(main.main(["--json", *command]), 1)
                 self.assertIn("unsupported", json.loads(output.getvalue())["error"])
             dispatch.assert_not_called()
@@ -45,9 +47,10 @@ class ArgvContractTests(unittest.TestCase):
 
     def test_windows_string_is_exact_path(self):
         binary = r"C:\한글 도구\Program Files\codex.exe"
-        with patch.object(_argv, "_WINDOWS", True), patch.object(
-            _argv.shutil, "which", return_value=binary
-        ) as which:
+        with (
+            patch.object(_argv, "_WINDOWS", True),
+            patch.object(_argv.shutil, "which", return_value=binary) as which,
+        ):
             self.assertEqual(cli_argv(binary, "codex"), [os.path.abspath(binary)])
             which.assert_called_once_with(binary)
             self.assertEqual(cli_argv(f'"{binary}"', "codex"), [os.path.abspath(binary)])
@@ -61,23 +64,28 @@ class ArgvContractTests(unittest.TestCase):
 
     def test_windows_shell_shims_fail_closed(self):
         for suffix in (".cmd", ".bat", ".ps1", ".py"):
-            with self.subTest(suffix=suffix), patch.object(_argv, "_WINDOWS", True), patch.object(
-                _argv.shutil, "which", return_value="C:/tool" + suffix
-            ), self.assertRaisesRegex(ConfigError, "native.*exe"):
+            with (
+                self.subTest(suffix=suffix),
+                patch.object(_argv, "_WINDOWS", True),
+                patch.object(_argv.shutil, "which", return_value="C:/tool" + suffix),
+                self.assertRaisesRegex(ConfigError, "native.*exe"),
+            ):
                 cli_argv("codex", "codex")
 
     def test_invalid_arrays_and_missing_binary(self):
         for value in ([], [""], ["python", 1], ["python\0.exe"], b"python", 3):
             with self.subTest(value=value), self.assertRaises(ConfigError):
                 cli_argv(value, "codex")
-        with patch.object(_argv.shutil, "which", return_value=None), self.assertRaisesRegex(
-            ConfigError, "argv array"
+        with (
+            patch.object(_argv.shutil, "which", return_value=None),
+            self.assertRaisesRegex(ConfigError, "argv array"),
         ):
             cli_argv("missing tool", "codex")
 
     def test_posix_legacy_string_remains_supported(self):
-        with patch.object(_argv, "_WINDOWS", False), patch.object(
-            _argv.shutil, "which", side_effect=[None, "/bin/wrapper"]
+        with (
+            patch.object(_argv, "_WINDOWS", False),
+            patch.object(_argv.shutil, "which", side_effect=[None, "/bin/wrapper"]),
         ):
             self.assertEqual(
                 cli_argv("'wrapper cli' --option", "codex"),
@@ -119,9 +127,11 @@ class ArgvContractTests(unittest.TestCase):
         from harness2.cli import run
 
         args = SimpleNamespace(name=None, argv=[], detach=False, dry_run=False)
-        with patch.object(run, "NATIVE_WINDOWS", True), patch.object(
-            run.registry, "load"
-        ) as suite, patch.object(run.subprocess, "Popen") as launch:
+        with (
+            patch.object(run, "NATIVE_WINDOWS", True),
+            patch.object(run.registry, "load") as suite,
+            patch.object(run.subprocess, "Popen") as launch,
+        ):
             with self.assertRaisesRegex(ConfigError, "live experiments are disabled"):
                 run.run(args, None)
         suite.assert_not_called()

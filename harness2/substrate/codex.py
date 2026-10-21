@@ -113,7 +113,9 @@ class CodexSubstrate:
     name = "cx"
     NATIVE_PATHS = NATIVE_PATHS
 
-    def __init__(self, launcher: Launcher | None = None, *, bin: str | list[str] | tuple[str, ...] = ""):
+    def __init__(
+        self, launcher: Launcher | None = None, *, bin: str | list[str] | tuple[str, ...] = ""
+    ):
         self._launcher = launcher
         self.bin = bin
 
@@ -180,7 +182,11 @@ class CodexSubstrate:
         ]
 
     def exec_env(
-        self, base_env: Mapping[str, str], *, codex_home: Path, bin: str | list[str] | tuple[str, ...] = ""
+        self,
+        base_env: Mapping[str, str],
+        *,
+        codex_home: Path,
+        bin: str | list[str] | tuple[str, ...] = "",
     ) -> dict[str, str]:
         """The reference `codex exec` environment; the real launchers build their own.
 

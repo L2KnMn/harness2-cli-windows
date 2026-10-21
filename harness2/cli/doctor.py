@@ -129,8 +129,7 @@ def run(args, ctx) -> int:
             (
                 role["bin"]
                 for role in roles
-                if role.get("channel") == "codex"
-                and role.get("model", "").startswith(name + "/")
+                if role.get("channel") == "codex" and role.get("model", "").startswith(name + "/")
             ),
             "",
         )

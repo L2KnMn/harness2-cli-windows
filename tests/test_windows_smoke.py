@@ -53,9 +53,7 @@ class WindowsSmokeTests(unittest.TestCase):
         self.root = Path(temporary.name).resolve()
         self.project = self.root / "작업 공간"
         (self.project / ".harness2").mkdir(parents=True)
-        isolated = patch.dict(
-            os.environ, {"XDG_CONFIG_HOME": str(self.root / "격리 설정")}
-        )
+        isolated = patch.dict(os.environ, {"XDG_CONFIG_HOME": str(self.root / "격리 설정")})
         isolated.start()
         self.addCleanup(isolated.stop)
         self.addCleanup(events.start, None)
@@ -120,7 +118,7 @@ class WindowsSmokeTests(unittest.TestCase):
     def test_explicit_python_fixture_preserves_utf8_stdin_and_arguments(self):
         script = self.root / "가짜 CLI.py"
         script.write_text(FAKE_CLI, encoding="utf-8")
-        prompt = "한글 작업과 공백, & 및 따옴표 \" 그대로 전달"
+        prompt = '한글 작업과 공백, & 및 따옴표 " 그대로 전달'
         prompt_file = self.root / "작업 요청.md"
         prompt_file.write_text(prompt, encoding="utf-8")
         fixture = [sys.executable, str(script)]

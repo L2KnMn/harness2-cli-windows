@@ -24,9 +24,7 @@ def normalize_rel(rel: str) -> str:
             continue
         if part == "..":
             raise ValueError(f"path escapes the harness: {rel!r}")
-        if part.endswith((" ", ".")) or any(
-            ord(char) < 32 or char in '<>:"|?*' for char in part
-        ):
+        if part.endswith((" ", ".")) or any(ord(char) < 32 or char in '<>:"|?*' for char in part):
             raise ValueError(f"path is not a portable file name: {rel!r}")
         if part.split(".", 1)[0].rstrip(" ").upper() in _DEVICES:
             raise ValueError(f"path uses a reserved Windows name: {rel!r}")

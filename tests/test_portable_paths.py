@@ -42,11 +42,31 @@ class PortablePathsTests(unittest.TestCase):
 
     def test_rejects_unsafe_or_nonportable_paths_on_every_os(self):
         invalid = (
-            "../out", "a/../out", "/root", r"\root", r"C:\root", "C:relative",
-            r"\\server\share\file", r"\\?\C:\file", "file:stream", "NUL",
-            "con.txt", "CON .txt", "NUL .py", "COM1 .txt", "AUX .log",
-            "a/COM1.py", "LPT².log", "a/CONOUT$", "name.", "name ",
-            "a/name./file", 'a/ba\"d', "a/b?d", "a/b*d", "a/\x00file",
+            "../out",
+            "a/../out",
+            "/root",
+            r"\root",
+            r"C:\root",
+            "C:relative",
+            r"\\server\share\file",
+            r"\\?\C:\file",
+            "file:stream",
+            "NUL",
+            "con.txt",
+            "CON .txt",
+            "NUL .py",
+            "COM1 .txt",
+            "AUX .log",
+            "a/COM1.py",
+            "LPT².log",
+            "a/CONOUT$",
+            "name.",
+            "name ",
+            "a/name./file",
+            'a/ba"d',
+            "a/b?d",
+            "a/b*d",
+            "a/\x00file",
         )
         for value in invalid:
             with self.subTest(value=value), self.assertRaises(ValueError):
@@ -54,8 +74,11 @@ class PortablePathsTests(unittest.TestCase):
 
     def test_rejects_aliases_case_collisions_and_file_directory_conflicts(self):
         for paths in (
-            ["a/b", r"a\b"], ["AGENTS.md", "agents.md"],
-            ["Folder/a", "folder/b"], ["a", "a/b"], ["."],
+            ["a/b", r"a\b"],
+            ["AGENTS.md", "agents.md"],
+            ["Folder/a", "folder/b"],
+            ["a", "a/b"],
+            ["."],
         ):
             with self.subTest(paths=paths), self.assertRaises(ValueError):
                 _paths.validate_relative_paths(paths)

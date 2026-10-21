@@ -106,8 +106,7 @@ def main(argv: list[str] | None = None) -> int:
     ctx = Context(args, getattr(args._module, "FLAGS", {}))
     try:
         if NATIVE_WINDOWS and (
-            args.command in ("eval", "judge", "chat")
-            or (args.command == "doctor" and args.live)
+            args.command in ("eval", "judge", "chat") or (args.command == "doctor" and args.live)
         ):
             raise RuntimeError(
                 f"native Windows {args.command} model execution is unsupported in the "
