@@ -1,0 +1,43 @@
+name: Windows offline comparison
+
+on:
+  push:
+    branches: [codex/windows-foundation]
+    paths:
+      - .github/workflows/windows-offline.yml
+      - scripts/run_windows_offline.py
+      - harness2/**
+      - tests/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-offline-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  offline:
+    name: Windows 2022 / Python 3.12.6
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.6"
+      - name: Run offline comparison without installing the project
+        run: python -X utf8 -B scripts/run_windows_offline.py --output .test-temp/windows-offline
+      - name: Upload offline results and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-offline-${{ github.run_id }}
+          path: |
+            .test-temp/windows-offline/*.json
+            .test-temp/windows-offline/*.log
+          if-no-files-found: warn
+          retention-days: 7
