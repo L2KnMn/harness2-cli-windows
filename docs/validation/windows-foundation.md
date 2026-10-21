@@ -87,7 +87,6 @@ No assertion was weakened and no budget/resume production fix was included.
 Four Codex workers split process/locking, paths, CI/tests, and independent review.
 Independent review findings were integrated, including reserved device-name variants,
 configured binary forwarding, mock boundaries, UTF-8 pipe coverage, and live-entry guards.
-agy did not execute implementation or review work; see [its sanitized status](agy-status.md).
 
 Minimum follow-up: atomic call admission reservations with cached/retried/cancelled
 settlement; coordinator-created context parents before parallel stage setup; explicit
