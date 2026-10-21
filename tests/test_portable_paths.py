@@ -11,7 +11,6 @@ from unittest.mock import patch
 from harness2 import _paths
 from harness2.core import runmark, tree
 
-
 SURFACE = tree.SurfaceSpec(
     name="portable-test",
     always_on=("AGENTS.md",),

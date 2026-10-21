@@ -69,4 +69,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uvx ruff check harness2 tests plugins
-      - run: uvx ruff format --check harness2 tests plugins
+      - run: uvx ruff format --diff harness2 tests plugins
