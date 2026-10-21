@@ -31,10 +31,6 @@ def file_lock(path: Path, *, timeout: float = 30.0, poll_interval: float = 0.05)
         import fcntl
 
     with open(path, "a+b") as stream:
-        stream.seek(0, os.SEEK_END)
-        if stream.tell() == 0:
-            stream.write(b"\0")
-            stream.flush()
         deadline = time.monotonic() + timeout
         while True:
             stream.seek(0)
@@ -52,6 +48,12 @@ def file_lock(path: Path, *, timeout: float = 30.0, poll_interval: float = 0.05)
                     raise TimeoutError(f"timed out waiting for file lock: {path}") from exc
                 time.sleep(min(poll_interval, remaining))
         try:
+            # Windows permits locking beyond EOF. Initialize only while holding the lock:
+            # a competing initializer must never write another process's locked byte.
+            stream.seek(0, os.SEEK_END)
+            if stream.tell() == 0:
+                stream.write(b"\0")
+                stream.flush()
             yield
         finally:
             stream.seek(0)

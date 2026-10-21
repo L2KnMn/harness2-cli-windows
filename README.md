@@ -1,48 +1,54 @@
-# Harness2 CLI Windows 포크
+[English](README.md) | [한국어](README.ko.md)
 
-[L2KnMn/harness2-cli-windows](https://github.com/L2KnMn/harness2-cli-windows)는
-[3ae3ae/harness2-cli](https://github.com/3ae3ae/harness2-cli)를 Windows 네이티브 환경에서
-안전하게 사용할 수 있도록 개선하는 독립 포크입니다. 원본 연구는
-[google-research/harness2](https://github.com/google-research/harness2)입니다.
-프로젝트 지침·skill·프롬프트·보조 스크립트를 실험하고 결과를 검토하는 도구가 목표이며,
-모델 가중치나 사용자의 승인·보안 정책을 변경하는 도구가 아닙니다.
+# Harness2 CLI Windows fork
 
-**현재는 Windows 오프라인 호환 기반 단계입니다. 실제 Codex 개선 실험이 완성된 버전은 아닙니다.**
-아래 한국어 안내가 이 포크의 현재 지원 범위입니다. 뒤의 upstream 범용 사용법은 출처와
-설계 참고를 위해 보존했으며, Windows에서 그대로 실행할 수 있다는 뜻은 아닙니다.
+[L2KnMn/harness2-cli-windows](https://github.com/L2KnMn/harness2-cli-windows) is an
+independent fork of [3ae3ae/harness2-cli](https://github.com/3ae3ae/harness2-cli),
+working toward safe native Windows support. The original research is
+[google-research/harness2](https://github.com/google-research/harness2).
+The goal is to experiment with project instructions, skills, prompts and helper scripts,
+then review the results. This tool does not change model weights or the user's approval
+and security policies.
 
-- [현재 지원과 검증 결과](#현재-지원과-검증-결과)
-- [이 포크 설치](#이-포크-설치)
-- [프로젝트와 과제 준비](#프로젝트와-과제-준비)
-- [인증 없는 계획 미리보기](#인증-없는-계획-미리보기)
-- [조회와 결과 검토](#조회와-결과-검토)
-- [오프라인 테스트](#오프라인-테스트)
-- [현재 제한과 다음 단계](#현재-제한과-다음-단계)
-- [Upstream 참고 문서](#upstream-참고-문서)
+**This is currently an offline Windows compatibility foundation, not a completed Codex improvement workflow.**
+The guide below defines this fork's current support. The general upstream documentation
+that follows is retained for attribution and design reference; it does not establish that
+those commands work unchanged on Windows.
 
-## 현재 지원과 검증 결과
+- [Current support and validation](#current-support-and-validation)
+- [Installing this fork](#installing-this-fork)
+- [Preparing a project and task](#preparing-a-project-and-task)
+- [Previewing a plan without authentication](#previewing-a-plan-without-authentication)
+- [Inspecting saved runs and reviewing results](#inspecting-saved-runs-and-reviewing-results)
+- [Offline tests](#offline-tests)
+- [Current limitations and next steps](#current-limitations-and-next-steps)
+- [Upstream reference documentation](#upstream-reference-documentation)
 
-| 범위 | 현재 상태 |
+## Current support and validation
+
+| Area | Current status |
 | --- | --- |
-| 프로세스 생존 조회 | Windows 신호 전송 없이 조회; 접근 거부는 보수적으로 처리 |
-| 파일·경로 기반 | 프로세스 간 잠금, `/` 상대경로, 한글·공백 경로, 예약명·junction 검사 |
-| 실행 인자 | 명시적 argv 배열, UTF-8 입출력, Codex 승인·sandbox 우회 옵션 제거 |
-| 프로젝트 준비·조회 | init, task/config, 기존 run 조회, 조건을 갖춘 dry-run |
-| 실제 모델 실험 | Windows live run/eval/judge/chat/doctor --live 차단 유지 |
-| Linux/macOS | upstream 코드와 CI 유지; 이 포크의 전체 지원 검증 완료로 표시하지 않음 |
+| Process liveness | Queries Windows processes without sending signals; treats access denial conservatively |
+| Files and paths | Cross-process locking, `/` relative paths, Korean and spaced paths, reserved-name and junction checks |
+| Execution arguments | Explicit argv arrays, UTF-8 I/O, Codex approval and sandbox bypass options removed |
+| Project setup and inspection | init, task/config commands, saved-run inspection and dry-run with its prerequisites met |
+| Real-model experiments | Native Windows live run/eval/judge/chat/doctor --live remain blocked |
+| Linux/macOS | Upstream code and CI retained; full support by this fork has not been established |
 
-2026-10-21, **Python 3.12.6과 동일한 테스트 85개**를 비교했습니다.
-로컬 Windows 11은 **79 pass / 6 skip**, GitHub Windows Server 2022 VM은
-**80 pass / 5 skip**이며 양쪽 모두 실패·오류 0입니다. 차이는 로컬에서 생성 시 접근 거부가 발생해
-skip된 실제 junction 테스트 1개입니다. 이 수치는 전체 제품·실모델·설치 검증 결과가 아닙니다.
-[실행 로그·커밋·상세 결과](docs/validation/windows-offline-comparison.md),
-[지원 계약](docs/windows.md)을 확인하세요.
+On 2026-10-21, the recorded baseline at commit `c4d117f6` compared **the same 85 tests
+on Python 3.12.6**. Local Windows 11 recorded **79 pass / 6 skip**; the GitHub Windows
+Server 2022 VM recorded **80 pass / 5 skip**. Both had zero failures and errors.
+The difference was one real junction test skipped locally because creation was denied.
+These figures do not validate the full product, real-model runs or package installation.
+See the [logs, commits and detailed results](docs/validation/windows-offline-comparison.md)
+and [Windows support contract](docs/windows.md).
 
-## 이 포크 설치
+## Installing this fork
 
-Python 3.12 또는 3.13과 Git이 필요합니다. 현재 위 85개 공통 검증 기준은 3.12.6입니다.
-아래는 사용자가 선택해 수행하는 **포크 소스 설치 절차**이며 이번 오프라인 검증에서
-패키지 설치 자체를 검증한 것은 아닙니다. PowerShell에서 실행합니다.
+Python 3.12 or 3.13 and Git are required. The shared 85-test baseline above used 3.12.6.
+The following is a **source installation procedure for this fork**, for users who choose
+to install it. Package installation itself was not validated by the offline comparison.
+Run these commands in PowerShell.
 
 ```powershell
 git clone https://github.com/L2KnMn/harness2-cli-windows.git
@@ -55,21 +61,23 @@ $python = (Resolve-Path .\.venv\Scripts\python.exe).Path
 $harness2 = (Resolve-Path .\.venv\Scripts\harness2.exe).Path
 ```
 
-venv를 활성화하거나 PowerShell 실행 정책을 바꿀 필요는 없습니다. 배포 이름은 upstream과
-같은 `harness2-cli`, 명령은 `harness2`입니다. 단순히 `pip install harness2-cli`를 실행하거나
-아래 upstream 설치 URL을 사용하면 **이 포크가 아닌 원본 배포**를 설치할 수 있습니다.
-소스에서 일반 CLI를 실행할 때도 패키지 메타데이터가 필요합니다.
+There is no need to activate the venv or change PowerShell execution policy.
+The distribution name is still `harness2-cli`, and the command is `harness2`.
+A plain `pip install harness2-cli`, or the upstream installation URL below, can install
+**the original distribution instead of this fork**. Running the normal CLI from a source
+checkout also requires package metadata.
 
-Codex CLI와 모델 인증은 향후 실제 모델 실험을 위한 별도 요구사항입니다. 아래 오프라인
-테스트와 테스트 전용 미리보기를 위해 Codex를 설치하거나 로그인·키를 설정하지 마세요.
-실모델 설정·실행은 현재 Windows 지원 범위가 아닙니다.
+The Codex CLI and model authentication are separate prerequisites for future real-model
+experiments. Do not install Codex, sign in or configure keys for the offline tests and
+test-only preview below. Real-model setup and execution are outside current Windows support.
 
-## 프로젝트와 과제 준비
+## Preparing a project and task
 
-먼저 기존 개발 저장소와 분리된 연습 디렉터리에서 시작하세요. 다음 명령은 그 디렉터리의
-`.harness2/`만 준비합니다. 기존 설정이 있으면 중단하며 `--force`를 권하지 않습니다.
-`HARNESS2_*` 환경변수나 profile 덮어쓰기가 없는 셸에서 진행하고, 과제 생성 전 경로가
-아래 프로젝트 상대경로로 해석되는지 `config show --origin`에서 확인하세요.
+Start in a practice directory separate from existing development repositories.
+The commands below prepare only that directory's `.harness2/`. Initialization stops if
+configuration already exists; using `--force` is not recommended here.
+Use a shell without `HARNESS2_*` or profile overrides. Before creating the task, inspect
+`config show --origin` to confirm that the paths resolve to the project-relative paths below.
 
 ```powershell
 $project = Join-Path (Split-Path (Get-Location) -Parent) "하네스 연습 프로젝트"
@@ -83,12 +91,13 @@ New-Item -ItemType Directory -Path (Join-Path $project ".harness2/tasks/hello-ko
 & $harness2 -C $project --json task ls
 ```
 
-`--auth api-key`는 여기서 설정 형식만 선택하며 키를 저장하거나 로그인하지 않습니다.
-`init`은 발견한 Claude/Codex CLI의 `--version`을 조회할 수 있습니다. 기본 login 방식을
-선택하면 인증 상태 조회도 수행합니다. 위 예제는 새 인증을 요구하지 않으며, 키가 없다는
-안내는 이후의 테스트 전용 설정으로 대체하기 전까지 예상되는 안내입니다.
+Here, `--auth api-key` selects the configuration format without storing a key or signing in.
+`init` may query detected Claude/Codex CLIs with `--version`. Choosing the default login
+method also checks authentication status. This example does not require new authentication;
+a missing-key message is expected until the test-only configuration below replaces it.
 
-다음 파일을 **UTF-8, BOM 없이** 저장합니다. 생성된 `task.md`의 `TODO:` 문구를 반드시 교체하세요.
+Save the following files as **UTF-8 without a BOM**. Replace the generated `TODO:` text
+in `task.md`.
 
 ```text
 .harness2/tasks/hello-ko/
@@ -106,8 +115,9 @@ New-Item -ItemType Directory -Path (Join-Path $project ".harness2/tasks/hello-ko
 외부 네트워크를 사용하지 마세요.
 ```
 
-`files/input.txt`에는 `안녕하세요`처럼 비교할 텍스트를 넣습니다. `files/`의 내용은 임시
-작업공간 루트로 복사되므로 과제와 검사에서는 `files/input.txt`가 아닌 `input.txt`를 참조합니다.
+Put text to compare, such as `안녕하세요`, in `files/input.txt`. The contents of `files/`
+are copied to the temporary workspace root, so the task and check refer to `input.txt`,
+rather than `files/input.txt`.
 
 `task.toml`:
 
@@ -133,25 +143,31 @@ print(json.dumps({"n_passed": int(passed), "n_criteria": 1}))
 raise SystemExit(0 if passed else 1)
 ```
 
-`check`는 argv 배열이 아닌 **셸 명령 문자열**입니다. 향후 평가 시 새 작업공간에서 실행되며,
-Windows의 기본 셸을 PowerShell로 가정하면 안 됩니다. 신뢰하는 검사만 작성하세요.
-마지막 JSON 줄은 부분 점수를, 종료 코드 0은 성공 여부를 표현합니다. 현재 Windows의
-`eval`·`judge`는 차단되어 있으며, dry-run은 이 검사도 실행하지 않습니다.
+`check` is a **shell-command string**, not an argv array. It runs in a fresh workspace
+during future evaluation; do not assume that the default Windows shell is PowerShell.
+Write only checks you trust. The final JSON line supplies partial scores, while exit code
+0 indicates success. Windows `eval` and `judge` are currently blocked, and dry-run does not
+execute this check.
 
-저장소 수정 과제는 `workspace = "project"`, `deliverable = "diff"`를 사용합니다.
-Git 저장소의 유효한 커밋이 필요하고, `ref`에 고정한 커밋에서 격리 worktree를 만듭니다.
-미커밋 변경은 자동 포함되지 않습니다. [과제 문서](docs/tasks.md)를 함께 참고하세요.
+Repository-editing tasks use `workspace = "project"` and `deliverable = "diff"`.
+They require a valid commit in a Git repository and create an isolated worktree from the
+commit specified by `ref`. Uncommitted changes are not automatically included.
+See the [task documentation](docs/tasks.md).
 
-## 인증 없는 계획 미리보기
+## Previewing a plan without authentication
 
-일반 `run --dry-run`도 실행파일·provider 사전 점검을 수행하므로 기존 실모델 설정에서는
-CLI 또는 인증 상태 조회가 발생할 수 있습니다. **인증 없이 준비한 과제와 예상 호출 수만
-확인하려면**, 위 연습 디렉터리의 생성된 `.harness2/config.toml`을 아래 테스트 설정으로 바꿉니다.
-실행파일 자리는 Python으로, provider는 연결하지 않는 loopback 주소로 지정합니다.
-모델 CLI·서버·키는 필요하지 않으며 실제 실험 설정으로 사용하면 안 됩니다.
-`HARNESS2_*` 환경변수·profile·추가 `-c` 덮어쓰기가 없는 셸을 사용하세요. 설정 우선순위는
-기본값 → 전역 config → 프로젝트 config → 환경변수 → CLI입니다. 마지막 `config show --origin`에서
-suite가 tasks이고 모든 모델 역할이 preview provider인지 확인한 뒤 미리보기를 진행하세요.
+A normal `run --dry-run` still performs executable and provider preflight checks, so an
+existing real-model configuration can trigger CLI or authentication-status queries.
+**To inspect the prepared task and estimated call count without authentication**, replace
+the generated `.harness2/config.toml` in the practice directory with the test configuration
+below. It uses Python in the executable slot and a loopback provider address that is never
+contacted. No model CLI, server or key is needed. Do not use this as a real experiment
+configuration.
+
+Use a shell without `HARNESS2_*`, profile or additional `-c` overrides. Configuration
+precedence is defaults → global config → project config → environment → CLI.
+Before previewing, check the final `config show --origin`: the suite must be tasks, and
+all model roles must use the preview provider.
 
 ```powershell
 $pythonToml = $python | ConvertTo-Json -Compress
@@ -204,17 +220,18 @@ workers = 1
 & $harness2 -C $project --json runs ls
 ```
 
-이 미리보기는 모델·검사·네트워크를 실행하지 않고, 새 `run.json`도 만들지 않습니다.
-따라서 `runs ls`가 비어 있고 `status preview`가 실행 없음 오류를 내는 것이 정상입니다.
-이미 실제 설정을 가진 프로젝트의 config를 이 예제로 덮어쓰지 마세요.
+This preview does not execute a model, check or network request, and does not create a new
+`run.json`. An empty `runs ls` and a missing-run error from `status preview` are therefore
+expected. Do not overwrite an existing real project configuration with this example.
 
-실제 Codex 경로를 나중에 설정할 때 Windows 문자열은 실행파일 **한 개**를 뜻합니다.
-추가 인자는 `bin = ['C:\도구\codex.exe', '인자']`처럼 argv 배열로 지정합니다.
-직접 `.cmd`·`.bat`·`.ps1`·`.py` shim 실행은 거부됩니다. 설정 예시가 실모델 실행 허가는 아닙니다.
+When configuring a real Codex path later, a Windows string means **one executable**.
+Additional arguments belong in an argv array, such as
+`bin = ['C:\도구\codex.exe', '인자']`. Direct `.cmd`, `.bat`, `.ps1` and `.py` shim execution
+is rejected. A configuration example is not authorization for a real-model run.
 
-## 조회와 결과 검토
+## Inspecting saved runs and reviewing results
 
-기존에 저장된 run이 있을 때만 다음 명령을 사용합니다. `saved-run`은 실제 이름으로 바꾸세요.
+Use the following only when a saved run already exists. Replace `saved-run` with its actual name.
 
 ```powershell
 & $harness2 -C $project --json runs ls
@@ -223,48 +240,67 @@ workers = 1
 & $harness2 -C $project --json diff saved-run --stat
 ```
 
-개선 결과는 원래 harness와의 diff로 검토합니다. `eval`은 baseline/candidate를 같은 과제로
-비교하는 단계이고, `apply --dry-run`은 적용 계획을 보는 단계입니다. 실제 `apply`는 프로젝트
-파일을 수정하므로 자동 실행하지 말고, 별도 검토 checkout과 사용자 변경을 보존한 상태에서
-구체적인 diff를 승인한 뒤 수행해야 합니다. 현재 Windows의 전체 평가·적용 경로는 검증 완료가
-아니며, 저장된 결과가 없으면 diff나 적용 계획도 만들 수 없습니다.
+Review improvements as a diff against the original harness. `eval` compares the baseline
+and candidate on the same tasks; `apply --dry-run` previews an application plan.
+An actual `apply` changes project files. Do not automate it: preserve user changes in a
+separate review checkout and approve the concrete diff before applying it.
+The complete Windows evaluation and application paths have not been validated. Without
+saved results, a diff or application plan is unavailable as well.
 
-바깥 Codex가 이 CLI를 도구처럼 호출하는 것과 CLI 내부의 별도 `codex exec`는 다릅니다.
-향후 실험은 별도 프로세스의 사용량·시간·권한을 관리해야 합니다. 기존 resume은 완료 단계를
-재사용하는 기능이며 중단된 Codex 대화 자체를 이어 주는 보장은 아닙니다.
+An outer Codex calling this CLI as a tool differs from the separate `codex exec` process
+inside the CLI. Future experiments must manage that process's usage, time and permissions.
+Existing resume support reuses completed stages; it does not guarantee continuation of an
+interrupted Codex conversation.
 
-## 오프라인 테스트
+## Offline tests
 
-포크 저장소 루트에서 다음 명령을 실행합니다. 설치된 Python만 사용하며 프로젝트 설치나
-Codex·키·로그인이 필요하지 않습니다. 임시 메타데이터와 작업폴더는 테스트용으로 격리합니다.
+Run the following from the fork repository root. It uses the installed Python without
+installing this project, and requires no Codex, keys or login. Temporary metadata and
+working directories are isolated for testing.
 
 ```powershell
 py -3.12 -X utf8 -B scripts/run_windows_offline.py --output .test-temp/windows-offline
 ```
 
-기본 74개와 Demo fixture 기반 회귀 11개를 별도 프로세스로 실행하고 JSON·로그를 남깁니다.
-어느 그룹이든 실패하면 최종 종료 코드가 0이 아닙니다. 전체 원본 테스트가 아닌 명시한 85개
-범위이며, 생성할 수 없는 실제 junction과 POSIX 전용 제어는 skip 사유에 표시됩니다.
+The foundation modules and 11 Demo-fixture regression tests run in separate processes and
+save JSON reports and logs. A failure in either group makes the final exit code nonzero.
+The 85-test figures above belong to the linked validation commit. One regression test for
+lock contention on an empty sidecar was added afterward, bringing the current selected
+scope to 86 tests. This is not the full upstream suite. Unavailable real-junction creation
+and POSIX-only controls are recorded with skip reasons.
 
-## 현재 제한과 다음 단계
+## Current limitations and next steps
 
-- Windows live `run`, `eval`, `judge`, `chat`, `doctor --live`, live stop/detach와
-  범용 POSIX 셸 executor는 차단되어 있습니다. 문서 때문에 차단을 해제하지 않습니다.
-- 기존 budget 코드는 동시 호출 예약이 없어 제한 3회가 4회가 될 수 있습니다. 기존 병렬
-  context 디렉터리 생성도 접근 오류 시 fallback하여 총 30회가 29회가 되는 사례가 있습니다.
-  두 원인은 원본 커밋에서도 재현했고 **아직 수정하지 않았습니다**. 단일 성공 테스트가 안정성을
-  입증하지 않습니다. Codex 비용 `0.0`도 무료 사용을 뜻하지 않으며 USD 한도를 엄격한 상한으로
-  신뢰하면 안 됩니다.
-- 프로세스 소유권·stop/resume·시간 제한, 비용·평가 집계, CRLF/binary patch 보존,
-  사용자 변경을 보존하는 적용 트랜잭션을 후속 검증해야 합니다.
-- Linux 전체 지원도 이번 결과로 보증하지 않습니다. 일반 CLI·benchmark plugin의 범용 기능은
-  아래 upstream 참고 내용이며 Windows 지원 상태와 구분합니다.
+- Native Windows live `run`, `eval`, `judge`, `chat`, `doctor --live`, live stop/detach,
+  and the general-purpose POSIX shell executor remain blocked. Documentation does not
+  remove these guards.
+- Existing budget accounting has no concurrent-call reservation, so a limit of 3 calls can
+  become 4. Parallel context-directory creation can also encounter access errors and fall
+  back, producing 29 total calls instead of 30. Both causes were reproduced at the original
+  commit and **remain unfixed**. One successful test run does not establish stability.
+  A Codex cost of `0.0` does not mean free usage; do not treat the USD budget as a hard cap.
+- Process ownership, stop/resume, deadlines, cost and evaluation accounting, CRLF/binary
+  patch preservation, and application transactions that preserve user changes need further
+  validation.
+- These results do not establish full Linux support either. General CLI and benchmark-plugin
+  functionality in the upstream reference below is separate from this fork's Windows status.
 
-## Upstream 참고 문서
+## License and attribution
 
-아래 소개·원본 설치 URL·범용 실행 예시·CI 배지는 **3ae3ae/harness2-cli의 참고 문서**입니다.
-이 포크의 현재 Windows 사용법은 위 안내를 따르세요. 출처·논문·라이선스와 기존 유용한 설명은
-보존합니다. 특히 아래의 실모델 run/login/detach/eval 예시는 현재 Windows 지원 명령이 아닙니다.
+This fork's root license is [Apache-2.0](LICENSE). The original research and implementation
+are credited to the paper's Google authors; the general-purpose CLI comes from
+[3ae3ae/harness2-cli](https://github.com/3ae3ae/harness2-cli).
+This is an independent fork, not a Google product. Third-party code in the benchmark plugin
+retains its respective upstream licenses. The paper citation and license explanation below
+are also preserved.
+
+## Upstream reference documentation
+
+The introduction, original installation URLs, general execution examples and CI badges below
+are **reference documentation from 3ae3ae/harness2-cli**. Follow the guide above for this
+fork's current Windows usage. Attribution, the paper, licenses and useful existing
+explanations are preserved. In particular, the real-model run/login/detach/eval examples
+below are not currently supported Windows commands.
 
 ---
 

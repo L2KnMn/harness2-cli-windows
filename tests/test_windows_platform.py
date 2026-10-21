@@ -208,6 +208,41 @@ with file_lock(Path(sys.argv[2])):
             with file_lock(path, timeout=0):
                 pass
 
+    @unittest.skipUnless(os.name == "nt", "Windows locks can cover bytes beyond EOF")
+    def test_empty_sidecar_is_initialized_only_after_acquiring_lock(self):
+        script = """
+import msvcrt
+import os
+import sys
+with open(sys.argv[2], 'a+b') as stream:
+    msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+    try:
+        print('locked', os.fstat(stream.fileno()).st_size, flush=True)
+        sys.stdin.buffer.read()
+    finally:
+        stream.seek(0)
+        msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+"""
+        with tempfile.TemporaryDirectory(prefix="harness2 한글 공백 ", dir=ROOT) as temporary:
+            path = Path(temporary) / "empty.lock"
+            child = self.child(script, path)
+            try:
+                self.assertEqual(child.stdout.readline().strip(), b"locked 0")
+                self.assertEqual(path.stat().st_size, 0)
+                with self.assertRaises(TimeoutError):
+                    with file_lock(path, timeout=0.1, poll_interval=0.01):
+                        self.fail("the empty sidecar is already locked by another process")
+                self.assertEqual(path.stat().st_size, 0)
+            finally:
+                out, err = child.communicate(timeout=10)
+            self.assertEqual(child.returncode, 0, (out, err))
+            with file_lock(path, timeout=1):
+                self.assertEqual(path.stat().st_size, 1)
+            self.assertEqual(path.read_bytes(), b"\0")
+            with file_lock(path, timeout=0):
+                pass
+            self.assertEqual(path.read_bytes(), b"\0")
+
     def test_summary_merges_from_concurrent_processes(self):
         script = """
 import sys
