@@ -51,7 +51,9 @@ Full stop/resume, reliable process-tree timeouts, exact patch bytes/CRLF handlin
 cost/evaluation accounting, and transactional result application remain follow-up work.
 The legacy parallel budget/resume regression intermittently reports either an initial
 4 calls against a limit of 3 or 29 total calls against an expected 30. Its assertion has
-not been weakened; this remains an open investigation, and live Windows runs stay blocked.
+not been weakened. Both failure mechanisms were reproduced in unchanged baseline code;
+see [validation and cause isolation](validation/windows-foundation.md). The fixes remain
+follow-up work, and live Windows runs stay blocked.
 Codex-reported money is currently unknown even where legacy records contain `0.0`; do not
 interpret that value as free usage or rely on the existing USD budget as a hard cap.
 
